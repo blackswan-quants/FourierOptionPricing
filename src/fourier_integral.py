@@ -38,15 +38,16 @@ def call_price_carr_madan(K: float, S0: float, r: float, T: float, sigma: float,
         
         # Carr-Madan integrand
         denom = (alpha**2 + alpha - u**2) + 1j * (2*alpha + 1) * u
-        num = np.exp(-1j * u * k) * phi_val
+        num = np.exp(-r * T) * np.exp(-1j * u * k) * phi_val
         
         # Return real part for integration
         return (num / denom).real
 
     # Numerical integration
-    val, err = quad(integrand, 0.0, u_max, epsabs=1e-10, epsrel=1e-8, limit=200)
+    val, err = quad(integrand, 0.0, u_max, epsabs=1e-8, epsrel=1e-6, limit=200)
         
     # Apply damping factor and normalization
     price = np.exp(-alpha * k) * val / np.pi
     
-    return price, err
+    error = np.exp(-alpha * k) * err / np.pi
+    return price, error
