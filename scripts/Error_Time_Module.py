@@ -1,128 +1,128 @@
 #-------------------------------- Error and Computing Time Evaluations -------------------------------------------------------------
 
 # ---- Standard Libraries:
+import time
 import numpy as np
 import pandas as pd
-import time
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+
 
 # ---- Purpose(s):
+# 1) Implement an error evaluation comparing FFT pricing vs. the Black–Scholes benchmark
+# 2) Compute the execution time for each FFT pricing run
+# 3) Plot error surfaces over parameter grids
 
-# // 1) Implementing an Error Evaluation for FFT pricing vs BS Formula (benchmark)
-#    2) Calculate Computing Time of the Pricing Process
-#    3) Plotting Errors
 
-# ---- Functions:
 #-------------------------------- Time and Error Functions -------------------------------------------------------------
 def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, option_param):
     """
-    Runs pricing via FFT pricer while computing elapsed time and saving parameters of the calculation
-    in a list, generating a results matrix 
+    Runs the FFT pricer over all combinations of alpha, eta, and N,
+    recording FFT price, elapsed time, and error vs. Black–Scholes price.
 
     Args:
-        alpha_grid: the range of alpha values
-        eta_grid: the range of eta values
-        n_grid: the range of n values
-        bs_price: the price given by the BS formula of the considered option
-        FFT_pricer: the function pricing via FFT Method
-        option_param (list): parameters of the considered option
+        alpha_grid (iterable): Range of damping factors α
+        eta_grid (iterable):   Range of frequency spacings η
+        n_grid (iterable):     Range of FFT sizes N (typically powers of 2)
+        bs_price (float):      Black–Scholes closed-form benchmark price
+        fft_pricer (callable): Function implementing FFT pricing with signature:
+                               fft_pricer(alpha, eta, n, option_param)
+        option_param:          Parameters required by fft_pricer (tuple/list/dict)
 
-    Output: 
-        A Matrix containing for each combination of parameter a log of the results
+    Returns:
+        pd.DataFrame: One row per run with:
+                      ["fft_price", "elapsed_time", "alpha", "eta", "n", "error"]
     """
 
-    #// Creating an experiments pandas Dataframe
     experiments = []
 
     for alpha in alpha_grid:
         for eta in eta_grid:
             for n in n_grid:
-                #// Start Timing current run
-                start_time = time.perf_counter()
-                fft_price = fft_pricer(alpha, eta, n, option_param)
-                end_time = time.perf_counter()
-                #// End Timing current run
 
-                #// Computing elapsed time and error
-                elapsed_time = end_time - start_time
+                # Start timing
+                start = time.perf_counter()
+                fft_price = fft_pricer(alpha, eta, n, option_param)
+                end = time.perf_counter()
+
+                elapsed_time = end - start
                 error = fft_price - bs_price
 
-                #// Adding to experiments log
-                run = [fft_price, elapsed_time, alpha, eta, n, error]
-                experiments.append(run)
+                experiments.append(
+                    [fft_price, elapsed_time, alpha, eta, n, error]
+                )
     
-    experiments_df = pd.DataFrame(experiments, columns=["fft_price", "elapsed_time", 
-                                                "alpha", "eta", "n", "error"])
-    return experiments_df
+    return pd.DataFrame(
+        experiments,
+        columns=["fft_price", "elapsed_time", "alpha", "eta", "n", "error"]
+    )
 
-def plot_error_surface(exp_df: pd.DataFrame, param_x: str, param_y: str, param_k: str, param_k_fix: float, plot_type='contourf', 
-                        log_scale_x=False, log_scale_y=False):
+
+#-------------------------------- Plotting Function -------------------------------------------------------------
+def plot_error_surface(
+    exp_df: pd.DataFrame,
+    param_x: str,
+    param_y: str,
+    param_k: str,
+    param_k_fix: float,
+    plot_type: str = "contourf",
+    log_scale_x: bool = False,
+    log_scale_y: bool = False
+):
     """
-    Plots a 3D surface or 2D contour map of an error metric versus two parameters
+    Plots either a 3D surface or a 2D contour map of the FFT pricing error
+    as a function of two varying parameters (param_x, param_y) while
+    fixing a third parameter (param_k = param_k_fix).
 
     Args:
-        exp_df (df): The df of experiments features (elapsed_time, error, ...)
-        param_x (str): The parameter on the X-axis (exe: 'alpha')
-        param_y (str): The parameter on the Y-axis (exe: 'eta')
-        plot_type (str): 'surface3d' for a 3D plot, 
-                        'contourf' for a 2D filled contour plot
-        log_scale_x (bool): Whether to use a log scale for the X-axis
-        log_scale_y (bool): Whether to use a log scale for the Y-axis
+        exp_df (DataFrame): Experiment results from fft_runs()
+        param_x (str): Parameter for X-axis (e.g., 'alpha')
+        param_y (str): Parameter for Y-axis (e.g., 'eta')
+        param_k (str): Parameter to keep fixed
+        param_k_fix (float): Value of param_k to filter the dataset
+        plot_type (str): 'surface3d' or 'contourf'
+        log_scale_x (bool): Apply logarithmic X-axis
+        log_scale_y (bool): Apply logarithmic Y-axis
     """
-    LABEL_ERROR = "FFT Error on BS"
-    #// 1) Create Domain Mesh with respect to param_x and param_y:
-    
-    #///// Fixing a value for the parameter not choosen (param_k)
-    pivot_df = exp_df[exp_df[param_k] == param_k_fix]
-            
-    #///// Create the X, Y grid coordinates and Z values error
-    x_values = pivot_df[param_x].unique()   #first parameter values
-    y_values = pivot_df[param_y].unique()  #second parameter values
+
+    LABEL_ERROR = "FFT Error vs BS"
+
+    # Filter rows where param_k is fixed
+    filtered = exp_df[exp_df[param_k] == param_k_fix]
+
+    # Build grid axes in sorted order
+    x_values = np.sort(filtered[param_x].unique())
+    y_values = np.sort(filtered[param_y].unique())
+
     X, Y = np.meshgrid(x_values, y_values)
 
-    # Computing Z
-    pivot_df = pivot_df.pivot(index=param_y, columns=param_x, values="error")
-    Z = pivot_df.values
-    #// 2) Plotting Error:
+    # Pivot error values to build Z matrix
+    pivot_table = filtered.pivot(index=param_y, columns=param_x, values="error")
+    Z = pivot_table.loc[y_values, x_values].values
 
+    if np.isnan(Z).any():
+        print("Warning: missing values detected in Z surface.")
+
+    # Plotting
     fig = plt.figure(figsize=(10, 7))
-    
-    if plot_type == 'surface3d':
-        ax = fig.add_subplot(111, projection='3d')
-        
-        # Plot the surface
-        surf = ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='none')
-        
-        # Add a color bar
+
+    if plot_type == "surface3d":
+        ax = fig.add_subplot(111, projection="3d")
+        surf = ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
         fig.colorbar(surf, shrink=0.5, aspect=10, label=LABEL_ERROR)
-        
-        ax.set_xlabel(param_x)
-        ax.set_ylabel(param_y)
-        ax.set_zlabel("FFT Error")
-        
-        if log_scale_x:
-            ax.set_xscale('log')
-        if log_scale_y:
-            ax.set_yscale('log')
-        
+        ax.set_zlabel("Error")
     else:
         ax = fig.add_subplot(111)
-        
-        # Plot the filled contour
-        cf = ax.contourf(X, Y, Z, levels=15, cmap='viridis')
-        
-        # Add a color bar
+        cf = ax.contourf(X, Y, Z, levels=15, cmap="viridis")
         fig.colorbar(cf, label=LABEL_ERROR)
-        
-        ax.set_xlabel(param_x)
-        ax.set_ylabel(param_y)
-        
-        if log_scale_x:
-            ax.set_xscale('log')
-        if log_scale_y:
-            ax.set_yscale('log')
 
-    plt.title(f'"FFT error on BS Formula vs. {param_x} & {param_y}')
+    ax.set_xlabel(param_x)
+    ax.set_ylabel(param_y)
+
+    if log_scale_x:
+        ax.set_xscale("log")
+    if log_scale_y:
+        ax.set_yscale("log")
+
+    plt.title(f"FFT Error vs BS — {param_x} & {param_y} (fixed {param_k}={param_k_fix})")
     plt.show()

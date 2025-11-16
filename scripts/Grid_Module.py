@@ -1,81 +1,78 @@
-#-------------------------------- Grid Generating Function (Module) -------------------------------------------------------------
+#-------------------------------- Grid Generating Functions -------------------------------------------------------------
 
-# ---- Modules Used:
+# ---- Standard Libraries:
 import numpy as np
 
-# ---- Functions:
 
-#ALPHA Grid for Exp Correction in the Alternative Call Price BS Function
+# ---- Purpose(s):
+# Provide parameter grids for FFT pricing experiments:
+# 1) Damping α grid
+# 2) Frequency spacing η grid
+# 3) FFT size N grid
+
+
+#-------------------------------- ALPHA Grid -------------------------------------------------------------
 def generate_alpha_grid(alpha_lower_bound, alpha_upper_bound, num_steps=10):
     """
-    Generates a grid for the damping coefficient alpha (alpha).
-    
-    The grid ranges from the specified lower bound to the theoretical
-    upper bound, as derived from the paper.
+    Generates a grid for the damping coefficient α.
 
-    Input Args:
-        alpha_lower_bound (float):  The small positive value to start the grid from.
-                                    The paper requires alpha > 0 .
-        alpha_upper_bound (float): The theoretical upper bound for alpha.
-        num_steps (int): The number of alpha values to generate.
+    Args:
+        alpha_lower_bound (float): Lower bound (must be > 0)
+        alpha_upper_bound (float): Upper bound for α
+        num_steps (int): Number of grid points
 
     Returns:
-        np.ndarray: An array of alpha values.
+        np.ndarray: Grid of alpha values
     """
     if alpha_lower_bound <= 0:
-        raise ValueError("alpha_lower_bound must be > 0")
-        
+        raise ValueError("alpha_lower_bound must be > 0.")
     if alpha_upper_bound <= alpha_lower_bound:
-        raise ValueError("alpha_upper_bound must be greater than alpha_lower_bound")
+        raise ValueError("alpha_upper_bound must exceed alpha_lower_bound.")
 
-    print(f"Generating alpha grid from {alpha_lower_bound} to {alpha_upper_bound:.4f} (safe upper bound).")
+    print(f"Generating alpha grid from {alpha_lower_bound} to {alpha_upper_bound:.4f}.")
     return np.linspace(alpha_lower_bound, alpha_upper_bound, num_steps)
 
-#ETA Grid for Inegration Domain Discretization
-def generate_eta_grid(max_eta, min_eta, num_steps=10):
-    """
-    Generates a grid for the frequency spacing eta (η)
 
-    For convergence studies, one would test a range of decreasing 
-    step sizes. A smaller eta implies a finer integration grid.
+#-------------------------------- ETA Grid -------------------------------------------------------------
+def generate_eta_grid(min_eta, max_eta, num_steps=10):
+    """
+    Generates a grid for the frequency spacing η.
+    Smaller η ⇒ finer integration grid.
 
     Args:
-        max_eta (float): The largest eta value to test.
-        min_eta (float): The smallest eta value to test.
-        num_steps (int): The number of eta values to generate.
+        min_eta (float): Smallest η value
+        max_eta (float): Largest η value
+        num_steps (int): Number of grid points
 
     Returns:
-        eta values grid
+        np.ndarray: Grid of eta values
     """
     if min_eta <= 0:
-        raise ValueError("eta values must be positive.")
-    if min_eta >= max_eta:
-        raise ValueError("min_eta must be less than max_eta.")
-    
-    #Generating Grid
-    print(f"Generating eta grid from {max_eta} to {min_eta}.")
+        raise ValueError("min_eta must be > 0.")
+    if max_eta <= min_eta:
+        raise ValueError("max_eta must exceed min_eta.")
+
+    print(f"Generating eta grid from {min_eta} to {max_eta}.")
     return np.linspace(min_eta, max_eta, num_steps)
 
-#N (Points Evaluated and Freq Discretization) for FFT Algorithm:
+
+#-------------------------------- N Grid -------------------------------------------------------------
 def generate_n_grid(min_power=8, max_power=14):
     """
-    Generates a grid for the number of FFT points, N.
-
-    The paper specifies that N is typically a power of 2 .
+    Generates a grid of FFT sizes N = 2^k.
 
     Args:
-        min_power (int): The smallest power of 2 (e.g., 8 for 2^8 = 256).
-        max_power (int): The largest power of 2 (e.g., 14 for 2^14 = 16384).
+        min_power (int): Smallest exponent (e.g., 8 → 256)
+        max_power (int): Largest exponent (e.g., 14 → 16384)
 
     Returns:
-        np.ndarray: An array of N values, as integers.
+        np.ndarray: Array of N values
     """
     if min_power < 1 or max_power < min_power:
-        raise ValueError("min_power must be >= 1 and max_power must be >= min_power.")
-        
+        raise ValueError("min_power must be >= 1 and max_power >= min_power.")
+
     powers = np.arange(min_power, max_power + 1)
-    n_values = 2**powers
-    
+    n_values = 2 ** powers
+
     print(f"Generating N grid (powers of 2): {n_values}")
     return n_values.astype(int)
-
