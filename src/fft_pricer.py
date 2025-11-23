@@ -1,6 +1,7 @@
 import numpy as np
 from typing import Tuple
 from characteristic_functions import cf_bs
+from scipy.stats import norm
 
 
 def fft_pricer(
@@ -49,8 +50,8 @@ def fft_pricer(
     k = -b + m * lambd
     K = np.exp(k)
 
-    u = v - 1j * (alpha + 1)   
-    phi_vals = cf_bs(u, S0, T, r, sigma)
+    u = v - 1j * (alpha + 1.0)
+    phi_vals = cf_bs(u, S_0=S0, T=T, r=r, sigma=sigma)
 
     discount = np.exp(-r * T)
     denom = alpha**2 + alpha - v**2 + 1j * (2 * alpha + 1) * v   
