@@ -10,7 +10,7 @@ def fft_pricer(
     sigma: float,
     alpha: float = 1.5,
     N: int = 2**12,
-    eta: float = 0.25,
+    eta: float = 0.25
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Carr-Madan FFT pricer for European call options.
@@ -31,8 +31,7 @@ def fft_pricer(
         Number of FFT grid points (power of 2)
     eta : float
         Frequency grid spacing
-
-    Returns
+    
     -------
     K : np.ndarray
         Strike grid
@@ -50,11 +49,11 @@ def fft_pricer(
     k = -b + m * lambd
     K = np.exp(k)
 
-    u = v - 1j * (alpha + 1.0)
-    phi_vals = cf_bs(u, S0=S0, T=T, r=r, sigma=sigma)
+    u = v - 1j * (alpha + 1)   
+    phi_vals = cf_bs(u, S0, T, r, sigma)
 
     discount = np.exp(-r * T)
-    denom = alpha**2 + alpha - v**2 + 1j * (2 * alpha + 1) * v
+    denom = alpha**2 + alpha - v**2 + 1j * (2 * alpha + 1) * v   
 
     psi = discount * phi_vals / denom
 
@@ -62,7 +61,7 @@ def fft_pricer(
     w[0] = 0.5
     w[-1] = 0.5
     w *= eta
-
+    
     fft_input = np.exp(1j * b * v) * psi * w
     fft_output = np.fft.fft(fft_input)
 

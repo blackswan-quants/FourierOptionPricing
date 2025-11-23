@@ -1,4 +1,6 @@
 # Placeholder for characteristic_functions.py — Fourier Option Pricing Project (Sprint 2)
+import numpy as np
+
 def cf_bs(u, S_0, T, r, sigma):
     """
     Characteristic function of log-price under BS model.
@@ -13,5 +15,6 @@ def cf_bs(u, S_0, T, r, sigma):
 
     Requires: numpy
     """
-    mu = np.log(S_0) + r - 0.5 * sigma**2
-    return np.exp(1j * u * mu * T - 0.5 * sigma**2 * u**2 * T)
+    mu = np.log(S_0) + (r - 0.5 * sigma**2) * T
+    return np.exp(1j * u * mu - 0.5 * sigma**2 * u**2 * T) 
+    
