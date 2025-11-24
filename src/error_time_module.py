@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from src.fft_pricer import fft_pricer
 
 
 # ---- Purpose(s):
@@ -15,7 +16,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 #-------------------------------- Time and Error Functions -------------------------------------------------------------
-def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, option_param):
+def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, S0, T, sigma, r, strike):
     """
     Runs the FFT pricer over all combinations of alpha, eta, and N,
     recording FFT price, elapsed time, and error vs. Black–Scholes price.
@@ -42,7 +43,8 @@ def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, option_param):
 
                 # Start timing
                 start = time.perf_counter()
-                fft_price = fft_pricer(alpha, eta, n, option_param)
+                k_temp, fft_prices = fft_pricer(S0, r, T, sigma, alpha, n, eta)
+                fft_price = np.interp(strike, k_temp, fft_prices) 
                 end = time.perf_counter()
 
                 elapsed_time = end - start

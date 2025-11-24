@@ -1,8 +1,17 @@
+<<<<<<< HEAD
 import numpy as np
 from numpy.typing import NDArray
+=======
+# Placeholder for characteristic_functions.py — Fourier Option Pricing Project (Sprint 2)
+import numpy as np
+def cf_bs(u, S_0, T, r, sigma):
+    """
+    Characteristic function of log-price under BS model.
+>>>>>>> main
 
 def cf_bs(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.complex128]:
     """
+<<<<<<< HEAD
     Characteristic function for Black-Scholes model.
     
     The Black-Scholes model assumes constant volatility and log-normal price distribution.
@@ -115,3 +124,8 @@ def cf_heston(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
     D = (b - d) / sigma_v**2 * ((1 - exp_neg_dT) / (1 - g * exp_neg_dT))
 
     return np.exp(C + D * v0)
+=======
+    mu = np.log(S_0) + (r - 0.5 * sigma**2) * T
+    return np.exp(1j * u * mu - 0.5 * sigma**2 * u**2 * T) 
+    
+>>>>>>> main
