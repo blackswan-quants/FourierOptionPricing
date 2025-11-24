@@ -1,27 +1,48 @@
 import numpy as np
 from numpy.typing import NDArray
 
-def cf_black_scholes(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.complex128]:
+def cf_bs(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.complex128]:
     """
     Characteristic function for Black-Scholes model.
+    
+    The Black-Scholes model assumes constant volatility and log-normal price distribution.
     Returns the Fourier transform of the log-price distribution.
+    
+    Required params:
+        S0 (float): Initial stock price
+        r (float): Risk-free interest rate
+        sigma (float): Volatility (annualized)
+        T (float): Time to maturity (in years)
+        q (float, optional): Dividend yield (default: 0.0)
     """
     S0 = params["S0"]
     r  = params["r"]
-    q  = params.get("q", 0.0)
+    q = params.get("q", 0.0)
     sigma = params["sigma"]
     T  = params["T"]
 
-    # Mean of log-return under risk-neutral measure
-    mu = np.log(S0) + r - 0.5 * sigma**2
-    
-    # CF of normal distribution
-    return np.exp(1j * u * mu * T - 0.5 * sigma**2 * u**2 * T)
+    # Expected log-price at maturity under the risk-neutral measure
+    mu = np.log(S0) + (r - q - 0.5 * sigma**2) * T
+
+    # CF of normal distribution with mean mu and variance sigma^2*T
+    return np.exp(1j * u * mu - 0.5 * sigma**2 * u**2 * T) 
 
 def cf_merton(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.complex128]:
     """
     Characteristic function for Merton jump-diffusion model.
-    Combines continuous diffusion with discrete jumps in log-price.
+    
+    Extends Black-Scholes by adding random jumps in price. The jumps follow a compound 
+    Poisson process with log-normal jump sizes.
+    
+    Required params:
+        S0 (float): Initial stock price
+        r (float): Risk-free interest rate
+        sigma (float): Diffusion volatility (annualized)
+        T (float): Time to maturity (in years)
+        lam (float): Jump intensity (average number of jumps per year)
+        mu_j (float): Mean of log-jump size
+        sig_j (float): Standard deviation of log-jump size
+        q (float, optional): Dividend yield (default: 0.0)
     """
     S0 = params["S0"]
     r = params["r"]
@@ -50,7 +71,21 @@ def cf_merton(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
 def cf_heston(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.complex128]:
     """
     Characteristic function for Heston stochastic volatility model.
-    Volatility follows a mean-reverting CIR process.
+    
+    Volatility follows a mean-reverting CIR (Cox-Ingersoll-Ross) process, allowing 
+    volatility to vary stochastically over time. Includes correlation between price 
+    and volatility movements (leverage effect).
+    
+    Required params:
+        S0 (float): Initial stock price
+        r (float): Risk-free interest rate
+        T (float): Time to maturity (in years)
+        kappa (float): Mean reversion speed of variance
+        theta (float): Long-run average variance
+        sigma_v (float): Volatility of variance (vol-of-vol)
+        rho (float): Correlation between price and variance (-1 to 1)
+        v0 (float): Initial variance
+        q (float, optional): Dividend yield (default: 0.0)
     """
     S0    = params["S0"]
     r     = params["r"]
