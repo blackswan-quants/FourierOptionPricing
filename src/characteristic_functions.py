@@ -13,16 +13,14 @@ def cf_bs(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np.com
         r (float): Risk-free interest rate
         sigma (float): Volatility (annualized)
         T (float): Time to maturity (in years)
-        q (float, optional): Dividend yield (default: 0.0)
     """
     S0 = params["S0"]
     r  = params["r"]
-    q = params.get("q", 0.0)
     sigma = params["sigma"]
     T  = params["T"]
 
     # Expected log-price at maturity under the risk-neutral measure
-    mu = np.log(S0) + (r - q - 0.5 * sigma**2) * T
+    mu = np.log(S0) + (r - 0.5 * sigma**2) * T
 
     # CF of normal distribution with mean mu and variance sigma^2*T
     return np.exp(1j * u * mu - 0.5 * sigma**2 * u**2 * T) 
@@ -42,11 +40,9 @@ def cf_merton(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
         lam (float): Jump intensity (average number of jumps per year)
         mu_j (float): Mean of log-jump size
         sig_j (float): Standard deviation of log-jump size
-        q (float, optional): Dividend yield (default: 0.0)
     """
     S0 = params["S0"]
     r = params["r"]
-    q = params.get("q", 0.0)
     sigma = params["sigma"]
     T = params["T"]
 
@@ -58,7 +54,7 @@ def cf_merton(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
     kappa = np.exp(mu_j + 0.5 * sig_j**2) - 1.0
 
     # Risk-neutral drift with jump compensation
-    drift = np.log(S0) + (r - q - 0.5 * sigma**2 - lam * kappa) * T
+    drift = np.log(S0) + (r - 0.5 * sigma**2 - lam * kappa) * T
 
     # Diffusion component (Brownian motion part)
     diffusion_part = np.exp(1j * u * drift - 0.5 * sigma**2 * u**2 * T)
@@ -85,11 +81,9 @@ def cf_heston(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
         sigma_v (float): Volatility of variance (vol-of-vol)
         rho (float): Correlation between price and variance (-1 to 1)
         v0 (float): Initial variance
-        q (float, optional): Dividend yield (default: 0.0)
     """
     S0    = params["S0"]
     r     = params["r"]
-    q     = params.get("q", 0.0)
     T     = params["T"]
 
     kappa = params["kappa"]
@@ -108,7 +102,7 @@ def cf_heston(u: NDArray[np.complex128], params: dict[str, float]) -> NDArray[np
     exp_neg_dT = np.exp(-d * T)
 
     # Contribution from log-price drift
-    C = (1j * u * (np.log(S0) + (r - q) * T)
+    C = (1j * u * (np.log(S0) + r * T)
          + a / sigma_v**2 * ((b - d) * T - 2.0 * np.log((1 - g * exp_neg_dT) / (1 - g))))
     
     # Contribution from stochastic variance
