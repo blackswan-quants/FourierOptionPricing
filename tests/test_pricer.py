@@ -69,7 +69,7 @@ class TestFFTImplementation(unittest.TestCase):
         self.sigma = 0.2
 
         # Numerical Parameters (Carr-Madan)
-        self.alpha = 1.5
+        self.alpha = 1.25
         self.N = 4096
         self.eta = 0.25
 
