@@ -5,6 +5,7 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import Iterable, Callable
 from mpl_toolkits.mplot3d import Axes3D
 from src.fft_pricer import fft_pricer
 from characteristic_functions import cf_bs
@@ -16,7 +17,9 @@ from characteristic_functions import cf_bs
 
 
 #-------------------------------- Time and Error Functions -------------------------------------------------------------
-def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, params, strike):
+def fft_runs(alpha_grid: Iterable[float], eta_grid: Iterable[float], n_grid: Iterable[int],
+             bs_price: float, fft_pricer: Callable, params: dict[str, float], strike: float) -> pd.DataFrame:
+
     """
     Runs the FFT pricer over all combinations of alpha, eta, and N,
     recording FFT price, elapsed time, and error vs. Black–Scholes price.
