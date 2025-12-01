@@ -5,9 +5,10 @@ import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import Iterable, Callable
 from mpl_toolkits.mplot3d import Axes3D
 from src.fft_pricer import fft_pricer
-
+from characteristic_functions import cf_bs
 
 # ---- Purpose(s):
 # 1) Implement an error evaluation comparing FFT pricing vs. the Black–Scholes benchmark
@@ -16,7 +17,9 @@ from src.fft_pricer import fft_pricer
 
 
 #-------------------------------- Time and Error Functions -------------------------------------------------------------
-def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, S0, T, sigma, r, strike):
+def fft_runs(alpha_grid: Iterable[float], eta_grid: Iterable[float], n_grid: Iterable[int],
+             bs_price: float, fft_pricer: Callable, params: dict[str, float], strike: float) -> pd.DataFrame:
+
     """
     Runs the FFT pricer over all combinations of alpha, eta, and N,
     recording FFT price, elapsed time, and error vs. Black–Scholes price.
@@ -27,14 +30,14 @@ def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, S0, T, sigma, r
         n_grid (iterable):     Range of FFT sizes N (typically powers of 2)
         bs_price (float):      Black–Scholes closed-form benchmark price
         fft_pricer (callable): Function implementing FFT pricing with signature:
-                               fft_pricer(alpha, eta, n, option_param)
-        option_param:          Parameters required by fft_pricer (tuple/list/dict)
+                               fft_pricer(cf, params, alpha, n, eta)
+        params:          Parameters required by fft_pricer (tuple/list/dict)
 
     Returns:
         pd.DataFrame: One row per run with:
                       ["fft_price", "elapsed_time", "alpha", "eta", "n", "error"]
     """
-
+    
     experiments = []
 
     for alpha in alpha_grid:
@@ -43,7 +46,7 @@ def fft_runs(alpha_grid, eta_grid, n_grid, bs_price, fft_pricer, S0, T, sigma, r
 
                 # Start timing
                 start = time.perf_counter()
-                k_temp, fft_prices = fft_pricer(S0, r, T, sigma, alpha, n, eta)
+                k_temp, fft_prices = fft_pricer(cf_bs, params, alpha, n, eta)
                 fft_price = np.interp(strike, k_temp, fft_prices) 
                 end = time.perf_counter()
 

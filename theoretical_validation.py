@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from scipy.stats import norm
 from src import fft_pricer, grid_module
+from characteristic_functions import cf_bs
 
 #functions
 def select_random_parameters_fft(N_grid, eta_grid, alpha_grid):
@@ -40,6 +41,11 @@ r = 0.05
 T = np.arange(0.5, 1.5, 0.1)
 vol = np.arange(0.15, 0.6, 0.05)
 
+params = {"S0": S0,
+    "r": r,
+    "T": 0.5,
+    "sigma": 0.15}
+
 #RMK: the pricer gives in output a list of prices, according to a list of K strike
 
 #// Generate pricer parameters
@@ -59,13 +65,16 @@ for i in range(5):
     n_value, eta_value, alpha_value = select_random_parameters_fft(N, eta, alpha)
     t_value, vol_value = select_random_parameters_call(T, vol)
     
+    params["T"] = t_value
+    params["sigma"] = vol_value
+
     #FIxed T, Fixed vol
-    k_values, k_results = fft_pricer.fft_pricer(S0, r, t_value, vol_value, alpha_value, n_value, eta_value)
+    k_values, k_results = fft_pricer.fft_pricer(cf_bs, params, alpha_value, n_value, eta_value)
     valid_indices = (k_values > S0 * 0.75) & (k_values < S0 * 1.25)
     k_values, k_results = (k_values[valid_indices], k_results[valid_indices])
 
     #Put_Call check:
-    _, put_prices = fft_pricer.fft_pricer(S0, r, t_value, vol_value, -alpha_value, n_value, eta_value)  #negative alpha for put
+    _, put_prices = fft_pricer.fft_pricer(cf_bs, params, -alpha_value, n_value, eta_value)  #negative alpha for put
     put_prices = put_prices[valid_indices]
     check = k_results - put_prices - S0 + np.exp(-r*t_value)*k_values #must be near 0
     no_parity += np.sum(np.abs(check) > 1e-1)
@@ -76,14 +85,17 @@ for i in range(5):
     vol_results = []
     for volat in vol:
         total_runs += 1
-        k_temp, call_price = fft_pricer.fft_pricer(S0, r, t_value, volat, alpha_value, n_value, eta_value)
+
+        params["sigma"] = volat
+
+        k_temp, call_price = fft_pricer.fft_pricer(cf_bs, params, alpha_value, n_value, eta_value)
 
         #fix K = 100
         call_at_100 = np.interp(100, k_temp, call_price)   #choosing the first price corresponding to the first fixed K strike
         vol_results.append(call_at_100)
 
         #Put_Call check:
-        _, put_prices = fft_pricer.fft_pricer(S0, r, t_value, volat, -alpha_value, n_value, eta_value)
+        _, put_prices = fft_pricer.fft_pricer(cf_bs, params, -alpha_value, n_value, eta_value)
         put_at_100 = np.interp(100, k_temp, put_prices) 
         check = call_at_100 - put_at_100 - S0 + np.exp(-r*t_value)*100 #must be near 0
         no_parity += np.sum(np.abs(check) > 1e-1)
@@ -92,14 +104,16 @@ for i in range(5):
     t_results = []
     for t in T:
         total_runs += 1
-        k_temp, call_price = fft_pricer.fft_pricer(S0, r, t, vol_value, alpha_value, n_value, eta_value)
+        params["T"] = t
+        params["sigma"] = vol_value
+        k_temp, call_price = fft_pricer.fft_pricer(cf_bs, params, alpha_value, n_value, eta_value)
 
         #fix K = 100
         call_at_100 = np.interp(100, k_temp, call_price)   #choosing the first price corresponding to the first fixed K strike
         t_results.append(call_at_100)
 
         #Put_Call check:
-        _, put_prices = fft_pricer.fft_pricer(S0, r, t, vol_value, -alpha_value, n_value, eta_value)
+        _, put_prices = fft_pricer.fft_pricer(cf_bs, params, -alpha_value, n_value, eta_value)
         put_at_100 = np.interp(100, k_temp, put_prices) 
         check = call_at_100 - put_at_100 - S0 + np.exp(-r*t)*100 #must be near 0
         no_parity += np.sum(np.abs(check) > 1e-1)
