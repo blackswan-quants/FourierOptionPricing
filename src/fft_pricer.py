@@ -8,7 +8,8 @@ def fft_pricer(
     params: Mapping[str, float],
     alpha: float = 1.5,
     N: int = 2**12,
-    eta: float = 0.25
+    eta: float = 0.25,
+    psi_override: np.ndarray = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     
     """
@@ -26,7 +27,7 @@ def fft_pricer(
             - "T": time to maturity
         and additional model-specific parameters.
 
-     alpha : float
+    alpha : float
         Damping factor used in the Carr-Madan transform. Must be > 0.
 
     N : int
@@ -35,12 +36,19 @@ def fft_pricer(
     eta : float
         Spacing of the frequency grid in the Fourier domain.
 
+    psi_override : np.ndarray, optional
+        Optional complex-valued integrand to replace the standard Carr-Madan
+        call-integrand.
+        Intended for the computation of option Greeks(Delta, Gamma, Vega).
+
     
     -------
     K : np.ndarray
         Strike grid
-    call_prices : np.ndarray
-        Corresponding FFT call prices
+    values : np.ndarray
+        Output of the FFT inversion. Represents:
+        - call prices under the Carr–Madan transform when `psi_override` is None,
+        - otherwise, the quantity associated with the provided integrand(Delta, Gamma, Vega).
     """
 
     r  = params["r"]
@@ -50,7 +58,17 @@ def fft_pricer(
     v = j * eta
     u = v - 1j * (alpha + 1.0)
 
-    phi_vals = cf(u, params)
+    if psi_override is None:
+        phi_vals = cf(u, params)
+
+        discount = np.exp(-r * T)
+        denom = alpha**2 + alpha - v**2 + 1j * (2 * alpha + 1) * v 
+
+        psi = discount * phi_vals / denom
+
+    else:
+        #Greek integrand
+        psi = psi_override
 
     lambd = 2 * np.pi / (N * eta)
     b = 0.5 * N * lambd
@@ -58,12 +76,6 @@ def fft_pricer(
     m = np.arange(N)
     k = -b + m * lambd
     K = np.exp(k)
-
-
-    discount = np.exp(-r * T)
-    denom = alpha**2 + alpha - v**2 + 1j * (2 * alpha + 1) * v   
-
-    psi = discount * phi_vals / denom
 
     w = np.ones(N)
     w[0] = 0.5
@@ -73,6 +85,6 @@ def fft_pricer(
     fft_input = np.exp(1j * b * v) * psi * w
     fft_output = np.fft.fft(fft_input)
 
-    call_prices = np.exp(-alpha * k) * fft_output.real / np.pi
+    values = np.exp(-alpha * k) * fft_output.real / np.pi
 
-    return K, call_prices
+    return K, values
