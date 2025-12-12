@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import minimize
-from fft_pricer import fft_pricer
-from characteristic_functions import cf_bs
+from fourier_options.pricing.fft_pricer import fft_pricer
+from fourier_options.domain.characteristic_functions import cf_bs
 
 
 # Model setup

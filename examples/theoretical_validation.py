@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from scipy.stats import norm
-from src import fft_pricer, grid_module
-from characteristic_functions import cf_bs
+from fourier_options.pricing import fft_pricer
+from fourier_options.utils import grid as grid_module
+from fourier_options.domain.characteristic_functions import cf_bs
 
 #functions
 def select_random_parameters_fft(N_grid, eta_grid, alpha_grid):
