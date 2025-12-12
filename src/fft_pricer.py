@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Tuple, Callable, Mapping
-import characteristic_functions
+
 
 
 def fft_pricer(
