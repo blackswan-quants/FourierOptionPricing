@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.typing import NDArray
 from typing import Mapping
-from .characteristic_functions import cf_bs
+from ..domain.characteristic_functions import cf_bs
 
 def delta_integrand(
     v: NDArray[np.float64],
