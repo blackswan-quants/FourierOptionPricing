@@ -1,7 +1,7 @@
 [project]
 name = "fourieroptionpricing"
 version = "0.1.0"
-description = "Add your description here"
+description = "FFT-based Option Pricing and Heston Model Calibration"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -10,3 +10,9 @@ dependencies = [
     "pandas>=2.3.3",
     "scipy>=1.16.3",
 ]
+
+[project.optional-dependencies]
+data = ["yfinance>=0.2.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
