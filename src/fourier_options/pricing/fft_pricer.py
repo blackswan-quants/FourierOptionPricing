@@ -9,11 +9,12 @@ def fft_pricer(
     alpha: float = 1.5,
     N: int = 2**12,
     eta: float = 0.25,
-    psi_override: np.ndarray = None
+    psi_override: np.ndarray = None,
+    option_type: str = 'call'
 ) -> Tuple[np.ndarray, np.ndarray]:
     
     """
-    Carr-Madan FFT pricer for European call options.
+    Carr-Madan FFT pricer for European options (call or put).
 
     Parameters
     ----------
@@ -25,6 +26,7 @@ def fft_pricer(
         function. Must include at least:
             - "r": risk-free rate
             - "T": time to maturity
+            - "S0": initial stock price
         and additional model-specific parameters.
 
     alpha : float
@@ -41,13 +43,17 @@ def fft_pricer(
         call-integrand.
         Intended for the computation of option Greeks(Delta, Gamma, Vega).
 
+    option_type : str, default 'call'
+        Type of option to price. Either 'call' or 'put'.
+        If 'put', computed via put-call parity from call prices for numerical stability.
     
+    Returns
     -------
     K : np.ndarray
         Strike grid
     values : np.ndarray
         Output of the FFT inversion. Represents:
-        - call prices under the Carr–Madan transform when `psi_override` is None,
+        - call/put prices under the Carr–Madan transform when `psi_override` is None,
         - otherwise, the quantity associated with the provided integrand(Delta, Gamma, Vega).
     """
 
@@ -77,14 +83,21 @@ def fft_pricer(
     k = -b + m * lambd
     K = np.exp(k)
 
-    w = np.ones(N)
-    w[0] = 0.5
-    w[-1] = 0.5
-    w *= eta
+    # Simpson's rule weights (Carr-Madan, 1999)
+    # Pattern: 1/3, 4/3, 2/3, 4/3, 2/3, ... for higher-order accuracy
+    w = (eta / 3.0) * (3.0 + (-1.0) ** (j + 1))
+    w[0] = eta / 3.0
     
     fft_input = np.exp(1j * b * v) * psi * w
     fft_output = np.fft.fft(fft_input)
 
     values = np.exp(-alpha * k) * fft_output.real / np.pi
+
+    # If put option requested, derive from call prices using put-call parity
+    # P = C - S0 + K*exp(-rT), more numerically stable than computing directly
+    if option_type.lower() == 'put':
+        S0 = params["S0"]
+        discount = np.exp(-r * T)
+        values = values - S0 + K * discount
 
     return K, values
