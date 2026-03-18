@@ -1,12 +1,13 @@
 import numpy as np
 from typing import Tuple, Callable, Mapping
+from tests.test_pricer import check_convexity
 
 
 
 def fft_pricer(
     cf: Callable[[np.ndarray, Mapping[str, float]], np.ndarray],
     params: Mapping[str, float],
-    alpha: float = 1.5,
+    alpha: float = None,
     N: int = 2**12,
     eta: float = 0.25,
     psi_override: np.ndarray = None
@@ -50,6 +51,26 @@ def fft_pricer(
         - call prices under the Carr–Madan transform when `psi_override` is None,
         - otherwise, the quantity associated with the provided integrand(Delta, Gamma, Vega).
     """
+
+    # Adaptive alpha selection
+    
+    ALPHA_INIT = 1.20
+    ALPHA_MAX  = 8.0
+    ALPHA_STEP = 0.20
+
+    if alpha is None:
+        S0   = params["S0"]
+        mask = lambda K: (K > S0 * 0.4) & (K < S0 * 1.8)
+
+        for alpha in np.arange(ALPHA_STEP, ALPHA_INIT + ALPHA_STEP, ALPHA_STEP):
+            K, values = fft_pricer(cf, params, alpha=alpha, N=N, eta=eta, psi_override=psi_override)
+            if check_convexity(values[mask(K)], tolerance=1e-6):
+                return K, values
+
+        for alpha in np.arange(ALPHA_INIT + ALPHA_STEP, ALPHA_MAX, ALPHA_STEP):
+            K, values = fft_pricer(cf, params, alpha=alpha, N=N, eta=eta, psi_override=psi_override)
+            if check_convexity(values[mask(K)], tolerance=1e-6):
+                return K, values
 
     r  = params["r"]
     T  = params["T"]
