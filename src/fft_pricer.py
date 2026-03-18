@@ -51,8 +51,6 @@ def fft_pricer(
         - otherwise, the quantity associated with the provided integrand(Delta, Gamma, Vega).
     """
 
-    
-
     r  = params["r"]
     T  = params["T"]
 
