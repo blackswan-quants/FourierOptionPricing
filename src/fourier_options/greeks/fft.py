@@ -1,12 +1,12 @@
 import numpy as np
 from typing import Mapping, Tuple
-from .greeks_integrands import (
+from .integrands import (
     delta_integrand,
     gamma_integrand,
     vega_integrand
 )
 
-from .fft_pricer import fft_pricer
+from fourier_options.pricing.fft_pricer import fft_pricer
 def delta_fft_bs(
     params: Mapping[str, float],
     alpha: float = 1.5,

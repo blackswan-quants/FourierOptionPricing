@@ -13,8 +13,8 @@ src_path = os.path.join(project_root, 'src')
 if src_path not in sys.path:
     sys.path.append(src_path)
 
-from fft_pricer import fft_pricer
-from characteristic_functions import cf_bs
+from fourier_options.pricing.fft_pricer import fft_pricer
+from fourier_options.domain.characteristic_functions import cf_bs
 
 # --- 1. ANALYTICAL BENCHMARK ---
 def black_scholes_price(S, K, T, r, sigma, option_type='call'):

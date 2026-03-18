@@ -1,6 +1,6 @@
 import numpy as np
-from fft_pricer import fft_pricer
-from characteristic_functions import cf_bs
+from fourier_options.pricing.fft_pricer import fft_pricer
+from fourier_options.domain.characteristic_functions import cf_bs
 
 
 def _bs_fft_prices_on_strikes(
