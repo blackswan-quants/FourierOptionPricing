@@ -8,4 +8,6 @@ __pycache__/
 /.idea/workspace.xml
 /plots/*
 
-/tests/results/*
+/tests/results/*.claude/
+
+data/*.csv
