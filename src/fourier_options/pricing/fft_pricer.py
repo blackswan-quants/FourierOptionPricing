@@ -6,7 +6,7 @@ from typing import Tuple, Callable, Mapping
 def fft_pricer(
     cf: Callable[[np.ndarray, Mapping[str, float]], np.ndarray],
     params: Mapping[str, float],
-    alpha: float = 1.5,
+    alpha: float = None,
     N: int = 2**12,
     eta: float = 0.25,
     psi_override: np.ndarray = None,
@@ -29,8 +29,11 @@ def fft_pricer(
             - "S0": initial stock price
         and additional model-specific parameters.
 
-    alpha : float
-        Damping factor used in the Carr-Madan transform. Must be > 0.
+    alpha : float or None
+        Damping factor used in the Carr-Madan transform. Must be > 0 for calls.
+        If None, an adaptive selection is performed: candidates in
+        [0.25, 0.50, ..., 4.00] are tried in order and the first one that
+        produces a finite, non-negative integrand is returned.
 
     N : int
         Number of FFT grid points (recommend power of 2 for efficiency).
@@ -56,6 +59,22 @@ def fft_pricer(
         - call/put prices under the Carr–Madan transform when `psi_override` is None,
         - otherwise, the quantity associated with the provided integrand(Delta, Gamma, Vega).
     """
+
+    # Adaptive alpha: sweep candidates and pick the first numerically stable one.
+    # A candidate is accepted if the integrand psi is finite and the resulting
+    # prices in a central window are all non-negative.
+    if alpha is None:
+        S0 = params.get("S0", 1.0)
+        central_mask = lambda K: (K > S0 * 0.5) & (K < S0 * 2.0)
+        for _alpha in np.arange(0.25, 4.25, 0.25):
+            _K, _values = fft_pricer(cf, params, alpha=_alpha, N=N, eta=eta,
+                                     psi_override=psi_override)
+            window = central_mask(_K)
+            if np.all(np.isfinite(_values[window])) and np.all(_values[window] >= 0):
+                return _K, _values
+        # Fallback if no candidate passed (should not happen for standard models)
+        return fft_pricer(cf, params, alpha=1.5, N=N, eta=eta,
+                          psi_override=psi_override)
 
     r  = params["r"]
     T  = params["T"]

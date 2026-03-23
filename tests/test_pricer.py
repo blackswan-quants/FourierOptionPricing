@@ -48,25 +48,25 @@ def check_monotonicity(prices, option_type='call', tolerance=1e-6):
         # Prices should be increasing (diffs >= 0)
         return np.all(diffs >= -tolerance)
 
-def check_convexity(prices, strikes=None, tolerance=1e-6):
+def check_convexity(prices, strikes, tolerance=1e-6):
     """
-    Verifies convexity (Butterfly Spread cost >= 0).
+    Verifies convexity (Butterfly Spread cost >= 0) on a non-uniform strike grid.
     Essential to ensure non-negative probability densities.
-    Uses divided differences to handle non-equally-spaced strikes (e.g., log-spaced FFT grids).
-    """
-    if strikes is None:
-        # Equally-spaced case: simple discrete 2nd derivative
-        butterfly_cost = prices[:-2] - 2 * prices[1:-1] + prices[2:]
-    else:
-        # General case: 2nd divided difference for unequal spacing
-        dK_left  = strikes[1:-1] - strikes[:-2]   # K_{i} - K_{i-1}
-        dK_right = strikes[2:]   - strikes[1:-1]   # K_{i+1} - K_{i}
-        
-        slope_left  = (prices[1:-1] - prices[:-2]) / dK_left
-        slope_right = (prices[2:]   - prices[1:-1]) / dK_right
-        
-        butterfly_cost = slope_right - slope_left  # Must be >= 0 for convexity
 
+    The FFT produces log-spaced strikes, so the standard symmetric second difference
+    P[i-1] - 2*P[i] + P[i+1] approximates d²C/d(logK)², not d²C/dK².
+    For deep ITM calls K*dC/dK ≈ -K (large negative), causing the symmetric formula
+    to be negative even for perfectly convex prices.
+
+    The correct no-arbitrage condition on an arbitrary grid is:
+        wa*C(Ka) + wc*C(Kc) - C(Kb) >= 0
+    where wa = (Kc-Kb)/(Kc-Ka), wc = (Kb-Ka)/(Kc-Ka).
+    """
+    Ka, Kb, Kc = strikes[:-2], strikes[1:-1], strikes[2:]
+    Ca, Cb, Cc = prices[:-2], prices[1:-1], prices[2:]
+    wa = (Kc - Kb) / (Kc - Ka)
+    wc = (Kb - Ka) / (Kc - Ka)
+    butterfly_cost = wa * Ca + wc * Cc - Cb
     return np.all(butterfly_cost >= -tolerance)
 
 
@@ -132,7 +132,7 @@ class TestFFTImplementation(unittest.TestCase):
         Verifies convexity (absence of butterfly arbitrage).
         """
         # Note: If this fails, consider adjusting alpha or increasing N
-        is_valid = check_convexity(self.prices_clean, strikes=self.k_clean, tolerance=1e-6)
+        is_valid = check_convexity(self.prices_clean, self.k_clean, tolerance=1e-6)
         self.assertTrue(is_valid, "Convexity violation (Negative probabilities) detected.")
 
     def test_4_put_call_parity(self):
