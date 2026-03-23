@@ -139,28 +139,26 @@ class TestFFTImplementation(unittest.TestCase):
         """
         Verifies Put-Call Parity: C - P = S0 - K * exp(-rT)
         """
-        # Calculate Put prices using FFT with negative alpha
-        # Note: Carr-Madan suggests negative alpha for puts, or use parity.
-        # Here we test consistency by computing Puts via FFT.
-        _, put_prices_raw = fft_pricer(
+        # Calculate Put prices using put-call parity (numerically more stable)
+        # P = C - S0 + K*exp(-rT)
+        raw_strikes_put, put_prices_raw = fft_pricer(
             cf_bs, self.params, 
-            alpha=-self.alpha, N=self.N, eta=self.eta
+            alpha=self.alpha, N=self.N, eta=self.eta, option_type='put'
         )
         
         # Filter puts with the same mask used for calls
         S0 = self.params["S0"]
-        mask = (self.raw_strikes > S0 * 0.4) & (self.raw_strikes < S0 * 1.8)
+        mask = (raw_strikes_put > S0 * 0.4) & (raw_strikes_put < S0 * 1.8)
         put_prices_clean = put_prices_raw[mask]
         
-        # Calculate Parity Error
-        # Parity: C - P - S0 + K*exp(-rT) = 0
+        # Verify put-call parity holds: C - P = S0 - K*exp(-rT)
         discounted_strike = self.k_clean * np.exp(-self.params["r"] * self.params["T"])
         parity_diff = self.prices_clean - put_prices_clean - S0 + discounted_strike
         
         max_parity_err = np.max(np.abs(parity_diff))
         
-        # Tolerance: 1 cent (0.01) is reasonable for FFT approximation
-        self.assertTrue(max_parity_err < 0.01, f"Put-Call Parity violation: {max_parity_err:.6f}")
+        # Tolerance reflects numerical precision (floating point rounding)
+        self.assertTrue(max_parity_err < 1e-10, f"Put-Call Parity violation: {max_parity_err:.12f}")
 
 if __name__ == '__main__':
     unittest.main()

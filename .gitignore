@@ -6,8 +6,5 @@ __pycache__/
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
-/plots/*
-
-/tests/results/*.claude/
-
-data/*.csv
+task.4.pdf
+fourieroptionpricing.egg-info/
