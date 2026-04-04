@@ -1,7 +1,7 @@
 # Placeholder for fourier_integral.py — Fourier Option Pricing Project (Sprint 2)
 import numpy as np
 from scipy.integrate import quad
-from characteristic_functions import cf_bs
+from fourier_options.domain.characteristic_functions import cf_bs
 
 def call_price_carr_madan(K: float, params: dict[str, float], alpha: float, u_max: float = np.inf) -> tuple:
     """
