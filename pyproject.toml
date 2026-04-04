@@ -1,18 +1,17 @@
 [project]
 name = "fourieroptionpricing"
-version = "0.1.0"
-description = "FFT-based Option Pricing and Heston Model Calibration"
+version = "1.0.0"
+description = "FFT-based Option Pricing and Calibration (Carr-Madan, Heston, Merton, VG)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "matplotlib>=3.10.7",
     "numpy>=2.3.4",
-    "pandas>=2.3.3",
     "scipy>=1.16.3",
+    "yfinance>=1.2.0",
+    "tqdm>=4.0.0",
 ]
 
-[project.optional-dependencies]
-data = ["yfinance>=0.2.0"]
-
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["fourier_options*"]
