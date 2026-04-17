@@ -1,3 +1,7 @@
+[build-system]
+requires = ["scikit-build-core>=0.9", "pybind11>=2.11"]
+build-backend = "scikit_build_core.build"
+
 [project]
 name = "fourieroptionpricing"
 version = "1.0.0"
@@ -12,6 +16,8 @@ dependencies = [
     "tqdm>=4.0.0",
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["fourier_options*"]
+[tool.scikit-build]
+# CMakeLists.txt lives in engine/, sources reference fft_pricer.cpp relatively
+cmake.source-dir = "engine"
+# Python packages to bundle in the wheel
+wheel.packages = ["fourier_options"]

@@ -11,9 +11,7 @@ FourierOptionPricing/
 │
 ├── engine/                       ← C++ backend (pybind11)
 │   ├── fft_pricer.cpp            ← FFT + Greek + IV routines in C++
-│   └── setup.py                  ← build: uv run --with setuptools python setup.py build_ext --inplace
-│
-├── cpp_pricer.cp312-win_amd64.pyd  ← compiled C++ extension (auto-loaded by fourier_options)
+│   └── CMakeLists.txt            ← compiled automatically by scikit-build-core on `pip install`
 │
 ├── generate_figs.py              ← paper figure generation (main entry point)
 ├── paper/figs/                   ← generated PDFs (git-ignored)
@@ -39,18 +37,15 @@ FourierOptionPricing/
 ## Quick Start
 
 ```bash
-# Install deps
-uv sync
-
-# Build C++ backend (first time only)
-cd engine
-uv run --with setuptools --with pybind11 python setup.py build_ext --inplace
-cp cpp_pricer*.pyd ..
-cd ..
+# Install everything (deps + compiles C++ backend automatically)
+uv pip install -e .
 
 # Generate all paper figures
 uv run python generate_figs.py
 ```
+
+The `cpp_pricer` extension is compiled by CMake/scikit-build-core and installed
+directly into the `.venv` — no manual `cp` required. Requires CMake ≥ 3.15.
 
 ## Library Usage
 

@@ -303,7 +303,7 @@ wheels = [
 [[package]]
 name = "fourieroptionpricing"
 version = "1.0.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
