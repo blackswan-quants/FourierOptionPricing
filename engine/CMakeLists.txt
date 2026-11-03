@@ -13,5 +13,12 @@ else()
     target_link_options(cpp_pricer PRIVATE -fopenmp)
 endif()
 
+# MinGW (e.g. Strawberry Perl, MSYS2 on PATH): Python cannot find its runtime DLLs
+# (libstdc++, libgcc_s, libwinpthread, libgomp) and the import fails with
+# "DLL load failed while importing cpp_pricer". Link them into the module instead.
+if(MINGW)
+    target_link_options(cpp_pricer PRIVATE -static -static-libgcc -static-libstdc++)
+endif()
+
 # Install into the root of site-packages so `import cpp_pricer` works everywhere
 install(TARGETS cpp_pricer DESTINATION .)
